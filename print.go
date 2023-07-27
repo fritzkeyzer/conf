@@ -15,11 +15,27 @@ const (
 )
 
 // Print wraps PrintToString and prints the result to stdout.
+// Example output:
+//
+//	Host      = "localhost"
+//	Verbose   = false
+//	DB
+//	  .Name   = "app"
+//	  .User   = "user"
+//	  .Pass   ***
 func Print(ptr any) {
 	fmt.Println(PrintToString(ptr)) //nolint:forbidigo
 }
 
 // PrintToString returns a string representation of the config struct. Secrets are masked.
+// Example output:
+//
+//	Host      = "localhost"
+//	Verbose   = false
+//	DB
+//	  .Name   = "app"
+//	  .User   = "user"
+//	  .Pass   ***
 func PrintToString(ptr any) string {
 	v := reflect.ValueOf(ptr)
 	if v.Kind() != reflect.Ptr {

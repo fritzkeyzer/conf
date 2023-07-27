@@ -174,22 +174,40 @@ type Config struct {
 ```
 
 <a name="Print"></a>
-## func [Print](<https://github.com/fritzkeyzer/conf/blob/master/print.go#L18>)
+## func [Print](<https://github.com/fritzkeyzer/conf/blob/master/print.go#L26>)
 
 ```go
 func Print(ptr any)
 ```
 
-Print wraps PrintToString and prints the result to stdout.
+Print wraps PrintToString and prints the result to stdout. Example output:
+
+```
+Host      = "localhost"
+Verbose   = false
+DB
+  .Name   = "app"
+  .User   = "user"
+  .Pass   ***
+```
 
 <a name="PrintToString"></a>
-## func [PrintToString](<https://github.com/fritzkeyzer/conf/blob/master/print.go#L23>)
+## func [PrintToString](<https://github.com/fritzkeyzer/conf/blob/master/print.go#L39>)
 
 ```go
 func PrintToString(ptr any) string
 ```
 
-PrintToString returns a string representation of the config struct. Secrets are masked.
+PrintToString returns a string representation of the config struct. Secrets are masked. Example output:
+
+```
+Host      = "localhost"
+Verbose   = false
+DB
+  .Name   = "app"
+  .User   = "user"
+  .Pass   ***
+```
 
 <a name="SecretSource"></a>
 ## type [SecretSource](<https://github.com/fritzkeyzer/conf/blob/master/secret.go#L11-L15>)
