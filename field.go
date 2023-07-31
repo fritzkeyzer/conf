@@ -22,6 +22,10 @@ func flattenFields(v reflect.Value, path []string) []structField {
 
 	var fields []structField
 	for i := 0; i < t.NumField(); i++ {
+		if !t.Field(i).IsExported() {
+			continue
+		}
+
 		var f structField
 		f.field = t.Field(i)
 		f.value = v.Field(i)
