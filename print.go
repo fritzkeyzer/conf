@@ -3,6 +3,7 @@ package conf
 import (
 	"bytes"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
 
@@ -24,7 +25,7 @@ const (
 //	  .User   = "user"
 //	  .Pass   ***
 func Print(ptr any) {
-	fmt.Println(PrintToString(ptr)) //nolint:forbidigo
+	_, _ = fmt.Fprintln(os.Stdout, PrintToString(ptr))
 }
 
 // PrintToString returns a string representation of the config struct. Secrets are masked.
@@ -93,5 +94,5 @@ func PrintToString(ptr any) string {
 
 	table.Render()
 
-	return buf.String()
+	return "\n" + buf.String()
 }
