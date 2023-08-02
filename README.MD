@@ -16,6 +16,7 @@ Example from [examples/main.go](examples/main.go)
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/fritzkeyzer/conf"
@@ -72,6 +73,29 @@ func main() {
 	//    .User   = "user"
 	//    .Pass   ***
 	// ---------------------------
+
+	// other features include flattening the struct fields
+	fields, _ := conf.FlattenStructFields(&cfg)
+
+	// this way you can iterate over the fields and do something with them
+	// eg: exporting the values to a .env file
+	envFile := ""
+	for _, field := range fields {
+		envVar, e := field.EnvVar()
+		if !e {
+			continue
+		}
+
+		envVal, _ := field.ExportValue()
+		envFile += "export " + envVar + "=" + envVal + "\n"
+	}
+
+	fmt.Println(envFile)
+	// Output:
+	//export HOST=localhost
+	//export DB_NAME=app
+	//export DB_USER=user from secret manager
+	//export DB_PASS=secret password 1337
 }
 
 // SecretManager is a mock secret manager, for demo purposes
