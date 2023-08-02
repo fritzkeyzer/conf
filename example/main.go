@@ -86,14 +86,14 @@ func main() {
 // SecretManager is a mock secret manager, for demo purposes
 type SecretManager struct{}
 
-func (sm *SecretManager) Load(key string) (string, bool, error) {
+func (sm *SecretManager) Load(key string) ([]byte, bool, error) {
 	if key == "db-user" {
-		return "user from secret manager", true, nil
+		return []byte("user from secret manager"), true, nil
 	}
 
 	if key == "db-pass" {
-		return "secret password 1337", true, nil
+		return []byte("secret password 1337"), true, nil
 	}
 
-	return "", false, nil
+	return nil, false, nil
 }

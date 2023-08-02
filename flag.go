@@ -74,7 +74,7 @@ func LoadFlags(ptr any) error {
 
 		flagVar, found := GetFlag(flagName, os.Args[1:])
 
-		if err := field.SetValue(flagVar, found); err != nil {
+		if err := field.setString(flagVar, found); err != nil {
 			return fmt.Errorf("failed to set field %q from flag: %w", field.field.Name, err)
 		}
 	}

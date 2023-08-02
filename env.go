@@ -25,7 +25,7 @@ func LoadEnv(ptr any) error {
 
 		envVal, found := os.LookupEnv(envVar)
 
-		if err := field.SetValue(envVal, found); err != nil {
+		if err := field.setString(envVal, found); err != nil {
 			return fmt.Errorf("failed to set field %q from env var: %w", field.field.Name, err)
 		}
 	}

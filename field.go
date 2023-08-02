@@ -118,8 +118,8 @@ func (f *Field) ExportValue() (string, error) {
 	return string(buf), nil
 }
 
-// SetValue from a string. If the field is not a string or a bool, it will be unmarshalled from JSON.
-func (f *Field) SetValue(rawVal string, found bool) error {
+// setString from a string. If the field is not a string or a bool, it will be unmarshalled from JSON.
+func (f *Field) setString(rawVal string, found bool) error {
 	switch f.value.Kind() {
 	case reflect.Bool:
 		if found && rawVal == "" {
@@ -146,4 +146,18 @@ func (f *Field) SetValue(rawVal string, found bool) error {
 	}
 
 	return nil
+}
+
+// setBytes allows []byte fields to be set directly, otherwise it calls setString.
+func (f *Field) setBytes(data []byte, found bool) error {
+	if f.value.Kind() == reflect.Slice && f.value.Type().Elem().Kind() == reflect.Uint8 {
+		if !found {
+			return nil
+		}
+
+		f.value.SetBytes(data)
+		return nil
+	}
+
+	return f.setString(string(data), found)
 }

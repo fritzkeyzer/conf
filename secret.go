@@ -8,7 +8,7 @@ import (
 type SecretSource interface {
 	// Load a secret from the source. Returns the secret value, a boolean indicating if the secret was found and an error.
 	// NOTE: Load should not return an error if the secret was not found, but should instead return "", false, nil.
-	Load(key string) (string, bool, error)
+	Load(key string) ([]byte, bool, error)
 }
 
 // LoadSecrets recursively scans struct fields for the secret tag then sets the values from the secret SecretSource.
@@ -34,7 +34,7 @@ func LoadSecrets(ptr any, source SecretSource) error {
 			return fmt.Errorf("failed to load secret %q: %w", secretKey, err)
 		}
 
-		if err := field.SetValue(val, found); err != nil {
+		if err := field.setBytes(val, found); err != nil {
 			return fmt.Errorf("failed to set field %q from secret source: %w", field.field.Name, err)
 		}
 	}
