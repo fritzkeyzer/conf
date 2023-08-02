@@ -1,9 +1,7 @@
-package conf_test
+package conf
 
 import (
 	"testing"
-
-	"github.com/fritzkeyzer/conf"
 )
 
 func TestPrintToString(t *testing.T) {
@@ -30,7 +28,7 @@ func TestPrintToString(t *testing.T) {
 	cfg.ServiceCreds.User = "admin" // ServiceCreds will be printed on one line
 	cfg.ServiceCreds.Pass = "admin"
 
-	got := conf.PrintToString(&cfg)
+	got := PrintToString(&cfg)
 	want := `
 --------------------------------
   Host           = "localhost"  

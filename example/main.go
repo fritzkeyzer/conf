@@ -1,18 +1,3 @@
-[![Go Report Card](https://goreportcard.com/badge/github.com/fritzkeyzer/conf)](https://goreportcard.com/report/github.com/fritzkeyzer/conf)
-[![GitHub Actions](https://github.com/fritzkeyzer/conf/workflows/Test/badge.svg)](https://github.com/fritzkeyzer/conf/actions?query=workflow%3ATest+branch%3Amaster)
-[![Go Reference](https://pkg.go.dev/badge/github.com/fritzkeyzer/conf.svg)](https://pkg.go.dev/github.com/fritzkeyzer/conf)
-
-# conf
-
-Package conf provides a set of utilities for mapping configuration settings \(from env vars, flags and secret managers\) to struct fields.
-
-```go
-import "github.com/fritzkeyzer/conf"
-```
-
-## Usage
-Example from [examples/main.go](examples/main.go)
-```go
 package main
 
 import (
@@ -88,5 +73,3 @@ func (sm *SecretManager) Load(key string) (string, bool, error) {
 
 	return "", false, nil
 }
-
-```

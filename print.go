@@ -58,9 +58,9 @@ func PrintToString(ptr any) string {
 	table.SetCenterSeparator("-")
 
 	for _, field := range fields {
-		_, env := field.envVar()
-		_, flag := field.flagName()
-		_, secret := field.secretKey()
+		_, env := field.EnvVar()
+		_, flag := field.FlagName()
+		_, secret := field.SecretKey()
 
 		printVal := true
 		if field.value.Kind() == reflect.Struct {

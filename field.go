@@ -2,13 +2,19 @@ package conf
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"reflect"
-	"strconv"
-	"strings"
 )
 
-type structField struct {
+const (
+	envTag    = "env"
+	flagTag   = "flag"
+	secretTag = "secret"
+)
+
+// Field represents a struct field
+type Field struct {
 	path []string
 	name string
 
@@ -16,18 +22,34 @@ type structField struct {
 	value reflect.Value
 }
 
-// flattenFields returns a flat slice of structField from recursively traversing the struct fields of v.
-func flattenFields(v reflect.Value, path []string) []structField {
+// FlattenStructFields returns a flat slice of Field from recursively traversing the struct fields of v.
+//   - unexported fields are omitted
+//   - fields marked with an env, flag or secret tag are included, but their children are not
+func FlattenStructFields(ptr any) ([]Field, error) {
+	v := reflect.ValueOf(ptr)
+	if v.Kind() != reflect.Ptr {
+		return nil, errors.New("requires a pointer to struct")
+	}
+
+	v = v.Elem()
+	if v.Kind() != reflect.Struct {
+		return nil, errors.New("requires a pointer to struct")
+	}
+
+	return flattenFields(v, nil), nil
+}
+
+func flattenFields(v reflect.Value, path []string) []Field {
 	t := v.Type()
 
-	var fields []structField
+	var fields []Field
 	for i := 0; i < t.NumField(); i++ {
 		// skip unexported fields
 		if !t.Field(i).IsExported() {
 			continue
 		}
 
-		f := structField{
+		f := Field{
 			path:  path,
 			name:  t.Field(i).Name,
 			field: t.Field(i),
@@ -37,9 +59,9 @@ func flattenFields(v reflect.Value, path []string) []structField {
 		fields = append(fields, f)
 
 		// do not recurse into fields that have the env, flag or secret tags
-		_, env := f.envVar()
-		_, flag := f.flagName()
-		_, secret := f.secretKey()
+		_, env := f.EnvVar()
+		_, flag := f.FlagName()
+		_, secret := f.SecretKey()
 		if env || flag || secret {
 			continue
 		}
@@ -53,8 +75,9 @@ func flattenFields(v reflect.Value, path []string) []structField {
 	return fields
 }
 
-func (f *structField) envVar() (string, bool) {
-	envVar := f.field.Tag.Get("env")
+// EnvVar returns the `env` tag value and a bool indicating if the field has the `env` tag.
+func (f *Field) EnvVar() (string, bool) {
+	envVar := f.field.Tag.Get(envTag)
 	if envVar != "" {
 		return envVar, true
 	}
@@ -62,8 +85,9 @@ func (f *structField) envVar() (string, bool) {
 	return "", false
 }
 
-func (f *structField) flagName() (string, bool) {
-	flagName := f.field.Tag.Get("flag")
+// FlagName returns the `flag` tag value and a bool indicating if the field has the `flag` tag.
+func (f *Field) FlagName() (string, bool) {
+	flagName := f.field.Tag.Get(flagTag)
 	if flagName != "" {
 		return flagName, true
 	}
@@ -71,8 +95,9 @@ func (f *structField) flagName() (string, bool) {
 	return "", false
 }
 
-func (f *structField) secretKey() (string, bool) {
-	secretKey := f.field.Tag.Get("secret")
+// SecretKey returns the `secret` tag value and a bool indicating if the field has the `secret` tag.
+func (f *Field) SecretKey() (string, bool) {
+	secretKey := f.field.Tag.Get(secretTag)
 	if secretKey != "" {
 		return secretKey, true
 	}
@@ -80,43 +105,45 @@ func (f *structField) secretKey() (string, bool) {
 	return "", false
 }
 
-func (f *structField) setValue(rawVal string, found bool) error {
-	switch f.value.Kind() { //nolint:exhaustive
-	default:
-		return fmt.Errorf("unsupported kind: %s", f.value.Kind())
+// ExportValue returns the value of the field as a string. If the field is not a string it will be marshalled to JSON.
+func (f *Field) ExportValue() (string, error) {
+	if f.value.Kind() == reflect.String {
+		return f.value.String(), nil
+	}
+
+	buf, err := json.Marshal(f.value.Interface())
+	if err != nil {
+		return "", err
+	}
+	return string(buf), nil
+}
+
+// SetValue from a string. If the field is not a string or a bool, it will be unmarshalled from JSON.
+func (f *Field) SetValue(rawVal string, found bool) error {
+	switch f.value.Kind() {
+	case reflect.Bool:
+		if found && rawVal == "" {
+			f.value.SetBool(true)
+		} else if found && rawVal != "" {
+			f.value.SetBool(rawVal == "true")
+		}
 
 	case reflect.String:
+		if !found {
+			return nil
+		}
 		f.value.Set(reflect.ValueOf(rawVal))
 
-	case reflect.Bool:
-		if rawVal != "" {
-			f.value.SetBool(isTrue(rawVal))
-		} else {
-			f.value.Set(reflect.ValueOf(found))
+	default:
+		if !found {
+			return nil
 		}
 
-	case reflect.Int:
-		intVal, err := strconv.Atoi(rawVal)
-		if err != nil {
-			return fmt.Errorf("parsing int: %w", err)
-		}
-		f.value.SetInt(int64(intVal))
-
-	case reflect.Struct:
 		val := f.value.Addr().Interface()
 		if err := json.Unmarshal([]byte(rawVal), val); err != nil {
-			return fmt.Errorf("parsing json: %w, %q", err, rawVal)
+			return fmt.Errorf("%w, raw value: %q", err, rawVal)
 		}
 	}
 
 	return nil
-}
-
-func isTrue(s string) bool {
-	switch strings.ToLower(s) {
-	case "true", "y", "yes", "1":
-		return true
-	}
-
-	return false
 }

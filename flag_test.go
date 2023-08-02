@@ -1,17 +1,15 @@
-package conf_test
+package conf
 
 import (
 	"fmt"
 	"testing"
-
-	"github.com/fritzkeyzer/conf"
 )
 
 func ExampleGetFlag() {
 	args := []string{"nonsense", "--xyz=abc", "nonsense", "-v"}
 
-	xyz, _ := conf.GetFlag("--xyz", args)
-	_, verbose := conf.GetFlag("-v", args)
+	xyz, _ := GetFlag("--xyz", args)
+	_, verbose := GetFlag("-v", args)
 
 	fmt.Printf("xyz = %q, verbose = %v", xyz, verbose)
 
@@ -105,7 +103,7 @@ func TestGetFlag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			gotVal, gotFound := conf.GetFlag(tt.args.flag, tt.args.args)
+			gotVal, gotFound := GetFlag(tt.args.flag, tt.args.args)
 			if gotVal != tt.wantVal {
 				t.Errorf("GetFlag() gotVal = %v, want %v", gotVal, tt.wantVal)
 			}

@@ -1,10 +1,8 @@
 package conf
 
 import (
-	"errors"
 	"fmt"
 	"os"
-	"reflect"
 	"strings"
 )
 
@@ -55,7 +53,7 @@ func GetFlag(flag string, args []string) (val string, found bool) {
 	return "", false
 }
 
-// LoadFlags recursively scans struct fields for the flag tag then sets the values from CLI flags.
+// LoadFlags recursively scans struct fields for the `flag` tag then sets the values from CLI flags.
 // Eg:
 //
 //	type Config struct {
@@ -63,30 +61,20 @@ func GetFlag(flag string, args []string) (val string, found bool) {
 //		Verbose bool   `flag:"-v"`
 //	}
 func LoadFlags(ptr any) error {
-	v := reflect.ValueOf(ptr)
-	if v.Kind() != reflect.Ptr {
-		return errors.New("requires a pointer argument")
+	fields, err := FlattenStructFields(ptr)
+	if err != nil {
+		return err
 	}
-
-	v = v.Elem()
-	if v.Kind() != reflect.Struct {
-		return errors.New("requires a pointer to struct argument")
-	}
-
-	fields := flattenFields(v, nil)
 
 	for _, field := range fields {
-		flagName, flag := field.flagName()
+		flagName, flag := field.FlagName()
 		if !flag {
 			continue
 		}
 
 		flagVar, found := GetFlag(flagName, os.Args[1:])
-		if !found {
-			continue
-		}
 
-		if err := field.setValue(flagVar, found); err != nil {
+		if err := field.SetValue(flagVar, found); err != nil {
 			return fmt.Errorf("failed to set field %q from flag: %w", field.field.Name, err)
 		}
 	}
