@@ -4,13 +4,94 @@
 
 # conf
 
-Package conf provides a set of utilities for mapping configuration settings \(from env vars, flags and secret managers\) to struct fields.
+Package conf provides a set of utilities for mapping configuration settings from env vars, flags and secret managers to struct fields.
 
 ```go
 import "github.com/fritzkeyzer/conf"
 ```
 
-## Usage
+## Features
+Load struct fields from environment variables
+```go
+var Config struct {
+    DBConn string `env:"DB_CONN"`
+}
+
+_ = conf.LoadEnv(&Config)
+```
+
+Load struct fields from CLI flags
+```go
+var Config struct {
+    DBConn string `flag:"db-conn"`
+}
+
+_ = conf.LoadFlags(&Config)
+```
+
+Load struct fields from a secret manager
+```go
+var Config struct {
+    DBConn string `secret:"db-conn"`
+}
+
+_ = conf.LoadSecrets(&Config, secretMgr) // where secretMgr implements the SecretSource interface
+```
+
+## Utilities
+Parse flags from []string, eg: os.Args
+```go
+args := []string{"nonsense", "--xyz=abc", "nonsense", "-v"}
+
+// get value, found from []string
+value, found := GetFlag("--xyz", args) // value = "abc", found = true
+
+// eg:
+_, verbose := GetFlag("-v", args) // verbose = true
+```
+
+Print a config to stdout
+```go
+type Config struct {
+    Host    string `env:"HOST" flag:"--host"`
+    Verbose bool   `flag:"-v"`
+    Count   int    `flag:"--count"`
+    DB      struct {
+    Name string `env:"DB_NAME"`
+    User string `env:"DB_USER" secret:"db-user"`
+    Pass string `env:"DB_PASS" secret:"db-pass"`
+}
+
+conf.Print(&cfg) // notice how the secret fields are masked with ***
+
+// Output:
+// ---------------------------
+//  Host      = "localhost"
+//  Verbose   = false
+//  DB
+//    .Name   = "app"
+//    .User   = "user"
+//    .Pass   ***
+// ---------------------------
+```
+
+Flatten struct fields and iterate over them, eg: to export to a .env file
+```go
+fields, _ := conf.FlattenStructFields(&cfg)
+
+envFile := ""
+for _, field := range fields {
+    envVar, e := field.EnvVar()
+    if !e {
+        continue
+    }
+    
+    envVal, _ := field.ExportValue() // exports values in a way that is suitable for env vars and for loading back into the struct
+    envFile += "export " + envVar + "=" + envVal + "\n"
+}
+```
+
+## Example
 Example from [examples/main.go](examples/main.go)
 ```go
 package main
