@@ -1,6 +1,7 @@
 package conf
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -105,8 +106,15 @@ func (f *Field) SecretKey() (string, bool) {
 	return "", false
 }
 
-// ExportValue returns the value of the field as a string. If the field is not a string it will be marshalled to JSON.
+// ExportValue returns the value of the field as a string.
+//   - []byte fields are base64 encoded
+//   - string fields are not pre-processed
+//   - all other types marshalled to JSON
 func (f *Field) ExportValue() (string, error) {
+	if f.value.Kind() == reflect.Slice && f.value.Type().Elem().Kind() == reflect.Uint8 {
+		return base64.StdEncoding.EncodeToString(f.value.Bytes()), nil
+	}
+
 	if f.value.Kind() == reflect.String {
 		return f.value.String(), nil
 	}
@@ -118,8 +126,29 @@ func (f *Field) ExportValue() (string, error) {
 	return string(buf), nil
 }
 
-// setString from a string. If the field is not a string or a bool, it will be unmarshalled from JSON.
+// setString sets the underlying field value from a string.
+//   - []byte fields are assumed to be base64 encoded
+//   - string fields are not pre-processed
+//   - all other types are assumed to be JSON encoded
 func (f *Field) setString(rawVal string, found bool) error {
+	if f.value.Kind() == reflect.Slice && f.value.Type().Elem().Kind() == reflect.Uint8 {
+		if !found {
+			return nil
+		}
+
+		dst := make([]byte, base64.StdEncoding.DecodedLen(len(rawVal)))
+		n, err := base64.StdEncoding.Decode(dst, []byte(rawVal))
+		if err != nil {
+			return fmt.Errorf("decoding base64: %w", err)
+		}
+
+		if n > 0 {
+			f.value.SetBytes(dst[:n])
+		}
+
+		return nil
+	}
+
 	switch f.value.Kind() {
 	case reflect.Bool:
 		if found && rawVal == "" {
@@ -146,18 +175,4 @@ func (f *Field) setString(rawVal string, found bool) error {
 	}
 
 	return nil
-}
-
-// setBytes allows []byte fields to be set directly, otherwise it calls setString.
-func (f *Field) setBytes(data []byte, found bool) error {
-	if f.value.Kind() == reflect.Slice && f.value.Type().Elem().Kind() == reflect.Uint8 {
-		if !found {
-			return nil
-		}
-
-		f.value.SetBytes(data)
-		return nil
-	}
-
-	return f.setString(string(data), found)
 }

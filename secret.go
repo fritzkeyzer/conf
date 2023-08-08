@@ -34,7 +34,7 @@ func LoadSecrets(ptr any, source SecretSource) error {
 			return fmt.Errorf("failed to load secret %q: %w", secretKey, err)
 		}
 
-		if err := field.setBytes(val, found); err != nil {
+		if err := field.setString(string(val), found); err != nil {
 			return fmt.Errorf("failed to set field %q from secret source: %w", field.field.Name, err)
 		}
 	}
