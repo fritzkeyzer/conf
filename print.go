@@ -39,13 +39,12 @@ func Print(ptr any) {
 //	  .Pass   ***
 func PrintToString(ptr any) string {
 	v := reflect.ValueOf(ptr)
-	if v.Kind() != reflect.Ptr {
-		return "ERROR: config.Print: requires a pointer to struct as an argument"
+	if v.Kind() == reflect.Ptr {
+		v = v.Elem()
 	}
 
-	v = v.Elem()
 	if v.Kind() != reflect.Struct {
-		return "ERROR: config.Print: requires a pointer to struct as an argument"
+		return "ERROR: config.Print: requires a struct as an argument"
 	}
 
 	fields := flattenFields(v, nil)
@@ -79,6 +78,12 @@ func PrintToString(ptr any) string {
 				value = secretMask
 
 				valueLength := len(fmt.Sprint(field.value.Interface()))
+				if field.value.Kind() == reflect.String {
+					valueLength = len(field.value.String())
+				} else if field.value.Kind() == reflect.Slice {
+					valueLength = field.value.Len()
+				}
+
 				if valueLength == 0 {
 					value = secretMask + " (len=0)"
 				}
@@ -94,5 +99,11 @@ func PrintToString(ptr any) string {
 
 	table.Render()
 
-	return "\n" + buf.String()
+	render := buf.String()
+	lines := strings.Split(render, "\n")
+	for i, line := range lines {
+		lines[i] = strings.TrimRight(line, " ")
+	}
+
+	return strings.Join(lines, "\n")
 }

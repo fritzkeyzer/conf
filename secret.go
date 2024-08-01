@@ -4,20 +4,20 @@ import (
 	"fmt"
 )
 
-// SecretSource interface allows any secret manager to be used, by wrapping it in a type that implements this interface.
-type SecretSource interface {
+// SecretsLoader interface allows any secret manager to be used, by wrapping it in a type that implements this interface.
+type SecretsLoader interface {
 	// Load a secret from the source. Returns the secret value, a boolean indicating if the secret was found and an error.
 	// NOTE: Load should not return an error if the secret was not found, but should instead return "", false, nil.
 	Load(key string) ([]byte, bool, error)
 }
 
-// LoadSecrets recursively scans struct fields for the secret tag then sets the values from the secret SecretSource.
+// LoadSecrets recursively scans struct fields for the secret tag then sets the values from the secret SecretsLoader.
 // Eg:
 //
 //	type Config struct {
 //		Host string `secret:"host"`
 //	}
-func LoadSecrets(ptr any, source SecretSource) error {
+func LoadSecrets(ptr any, source SecretsLoader) error {
 	fields, err := FlattenStructFields(ptr)
 	if err != nil {
 		return err

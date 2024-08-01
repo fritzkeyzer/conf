@@ -29,14 +29,13 @@ func TestPrintToString(t *testing.T) {
 	cfg.ServiceCreds.Pass = "admin"
 
 	got := PrintToString(&cfg)
-	want := `
---------------------------------
-  Host           = "localhost"  
-  DB                            
-    .Host        *** (len=0)    
-    .User        = "admin"      
-    .Pass        ***            
-  ServiceCreds   ***            
+	want := `--------------------------------
+  Host           = "localhost"
+  DB
+    .Host        *** (len=0)
+    .User        = "admin"
+    .Pass        ***
+  ServiceCreds   ***
 --------------------------------
 `
 
